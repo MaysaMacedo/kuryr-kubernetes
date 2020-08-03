@@ -489,6 +489,7 @@ function generate_controller_deployment() {
     output_dir=$1
     health_server_port=$2
     controller_ha=$3
+    prometheus_exporter=$4
     mkdir -p "$output_dir"
     rm -f ${output_dir}/controller_deployment.yml
     cat >> "${output_dir}/controller_deployment.yml" << EOF
@@ -570,6 +571,14 @@ EOF
           initialDelaySeconds: 15
 EOF
 
+    if [ "$prometheus_exporter" == "True" ]; then
+      cat >> "${output_dir}/controller_deployment.yml" << EOF
+        ports:
+        - name: metrics-port
+          containerPort: 9654
+EOF
+    fi
+
     cat >> "${output_dir}/controller_deployment.yml" << EOF
       volumes:
       - name: config-volume
@@ -594,6 +603,7 @@ function generate_cni_daemon_set() {
     cni_health_server_port=$2
     cni_bin_dir=${3:-/opt/cni/bin}
     cni_conf_dir=${4:-/etc/cni/net.d}
+    prometheus_exporter=$5
     mkdir -p "$output_dir"
     rm -f ${output_dir}/cni_ds.yml
     cat >> "${output_dir}/cni_ds.yml" << EOF
@@ -671,6 +681,15 @@ EOF
             path: /alive
             port: ${cni_health_server_port}
           initialDelaySeconds: 60
+EOF
+    if [ "$prometheus_exporter" == "True" ]; then
+      cat >> "${output_dir}/cni_ds.yml" << EOF
+        ports:
+        - name: metrics-port
+          containerPort: 9655
+EOF
+    fi
+cat >> "${output_dir}/cni_ds.yml" << EOF
       volumes:
         - name: bin
           hostPath:

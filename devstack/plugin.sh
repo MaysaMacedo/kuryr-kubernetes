@@ -155,6 +155,8 @@ function generate_containerized_kuryr_resources {
     iniset "$KURYR_CONFIG" kubernetes controller_ha ${KURYR_CONTROLLER_HA}
     iniset "$KURYR_CONFIG" kubernetes controller_ha_port ${KURYR_CONTROLLER_HA_PORT}
 
+    iniset "$KURYR_CONFIG" kubernetes prometheus_exporter ${KURYR_PROMETHEUS_EXPORTER}
+
     # NOTE(dulek): In the container the CA bundle will be mounted in a standard
     # directory
     iniset "$KURYR_CONFIG" neutron cafile /etc/ssl/certs/kuryr-ca-bundle.crt
@@ -164,8 +166,8 @@ function generate_containerized_kuryr_resources {
     generate_kuryr_configmap $output_dir $KURYR_CONFIG
     generate_kuryr_certificates_secret $output_dir $SSL_BUNDLE_FILE
     generate_kuryr_service_account $output_dir
-    generate_controller_deployment $output_dir $KURYR_HEALTH_SERVER_PORT $KURYR_CONTROLLER_HA
-    generate_cni_daemon_set $output_dir $KURYR_CNI_HEALTH_SERVER_PORT $cni_daemon $CNI_BIN_DIR $CNI_CONF_DIR
+    generate_controller_deployment $output_dir $KURYR_HEALTH_SERVER_PORT $KURYR_CONTROLLER_HA $KURYR_PROMETHEUS_EXPORTER
+    generate_cni_daemon_set $output_dir $KURYR_CNI_HEALTH_SERVER_PORT $cni_daemon $CNI_BIN_DIR $CNI_CONF_DIR $KURYR_PROMETHEUS_EXPORTER
 }
 
 function run_containerized_kuryr_resources {

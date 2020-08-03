@@ -30,6 +30,7 @@ from kuryr_kubernetes import config
 from kuryr_kubernetes.controller.drivers import base as drivers
 from kuryr_kubernetes.controller.handlers import pipeline as h_pipeline
 from kuryr_kubernetes.controller.managers import health
+from kuryr_kubernetes.controller.managers import prometheus_exporter as exp
 from kuryr_kubernetes import objects
 from kuryr_kubernetes import utils
 from kuryr_kubernetes import watcher
@@ -85,6 +86,7 @@ class KuryrK8sService(service.Service, periodic_task.PeriodicTasks,
         pipeline = h_pipeline.ControllerPipeline(self.tg)
         self.watcher = watcher.Watcher(pipeline, self.tg)
         self.health_manager = health.HealthServer()
+        self.exporter = exp.ControllerPrometheusExporter.get_instance()
         self.current_leader = None
         self.node_name = utils.get_node_name()
 
@@ -112,7 +114,8 @@ class KuryrK8sService(service.Service, periodic_task.PeriodicTasks,
             f = functools.partial(self.run_periodic_tasks, None)
             self.tg.add_timer(1, f)
 
-        self.health_manager.run()
+        self.tg.add_thread(self.exporter.run)
+        self.tg.add_thread(self.health_manager.run)
         LOG.info("Service '%s' started", self.__class__.__name__)
 
     @periodic_task.periodic_task(spacing=5, run_immediately=True)
